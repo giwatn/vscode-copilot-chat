@@ -16,6 +16,12 @@ export interface TerminalAndTaskStateProps extends BasePromptElementProps {
  * PromptElement that gets the current task and terminal state for the chat context.
  */
 export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAndTaskStateProps> {
+	/**
+	 * Tracks previous counts of tasks and terminals in the previous render.
+	 */
+	private _lastTaskCount: number = 0;
+	private _lastTerminalCount: number = 0;
+
 	constructor(
 		props: TerminalAndTaskStateProps,
 		@ITasksService private readonly tasksService: ITasksService,
@@ -52,10 +58,6 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 					id: term.id,
 				};
 			});
-
-			if (terminals.length === 0 && tasks.length === 0) {
-				return 'No active tasks or terminals found.';
-			}
 
 			const renderTasks = () =>
 				runningTasks.length > 0 && (
@@ -96,12 +98,56 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 					</>
 				);
 
-			return (
-				<>
-					{tasks.length > 0 ? renderTasks() : 'No active tasks found.'}
-					{terminals.length > 0 ? renderTerminals() : 'No active terminals found.'}
-				</>
-			);
+
+			const prevTaskCount = this._lastTaskCount;
+			const prevTerminalCount = this._lastTerminalCount;
+			const taskCount = tasks.length;
+			const terminalCount = terminals.length;
+
+			// Update for next turn
+			this._lastTaskCount = taskCount;
+			this._lastTerminalCount = terminalCount;
+
+			const taskCountDropped = prevTaskCount > 0 && taskCount === 0;
+			const terminalCountDropped = prevTerminalCount > 0 && terminalCount === 0;
+			if (taskCountDropped && terminalCountDropped) {
+				return 'No active tasks or terminals found.';
+			} else if (taskCountDropped && terminalCount > 0) {
+				return (
+					<>
+						No active tasks found.<br />
+						{renderTerminals()}
+					</>
+				);
+			} else if (terminalCountDropped && taskCount > 0) {
+				return (
+					<>
+						{renderTasks()}
+						No active terminals found.<br />
+					</>
+				);
+			}
+
+			if (tasks.length > 0 && terminals.length > 0) {
+				return (
+					<>
+						{renderTasks()}
+						{renderTerminals()}
+					</>
+				);
+			} else if (tasks.length > 0) {
+				return (
+					<>
+						{renderTasks()}
+					</>
+				);
+			} else if (terminals.length > 0) {
+				return (
+					<>
+						{renderTerminals()}
+					</>
+				);
+			}
 		}
 	}
 }
