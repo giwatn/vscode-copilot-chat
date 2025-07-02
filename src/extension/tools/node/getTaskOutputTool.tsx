@@ -54,6 +54,13 @@ export class GetTaskOutputTool implements vscode.LanguageModelTool<ITaskOptions>
 
 	async prepareInvocation(options: vscode.LanguageModelToolInvocationPrepareOptions<ITaskOptions>, token: vscode.CancellationToken): Promise<vscode.PreparedToolInvocation> {
 		const { task, workspaceFolder, taskLabel } = this.getTaskDefinition(options.input) || {};
+		if (task && !this.tasksService.isTaskActive(task)) {
+			return {
+				invocationMessage: l10n.t`${taskLabel ?? options.input.id} is not running.`,
+				pastTenseMessage: l10n.t`${taskLabel ?? options.input.id} is not running.`,
+				confirmationMessages: undefined
+			};
+		}
 		const position = workspaceFolder && task && await this.tasksService.getTaskConfigPosition(workspaceFolder, task);
 		const link = (s: string) => position ? `[${s}](${position.uri.toString()}#${position.range.startLineNumber}-${position.range.endLineNumber})` : s;
 		const trustedMark = (value: string) => {

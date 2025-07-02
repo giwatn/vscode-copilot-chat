@@ -47,10 +47,10 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 				});
 			}
 		}
-
+		let terminals: { name: string; lastCommand: any; id: string }[] = [];
 		if (this.terminalService && Array.isArray(this.terminalService.terminals)) {
 			const copilotTerminals = await this.terminalService.getCopilotTerminals(this.props.sessionId, true);
-			const terminals = copilotTerminals.map((term) => {
+			terminals = copilotTerminals.map((term) => {
 				const lastCommand = this.terminalService.getLastCommandForTerminal(term);
 				return {
 					name: term.name,
@@ -58,96 +58,96 @@ export class TerminalAndTaskStatePromptElement extends PromptElement<TerminalAnd
 					id: term.id,
 				};
 			});
+		}
 
-			const renderTasks = () =>
-				runningTasks.length > 0 && (
-					<>
-						Active Tasks:<br />
-						{runningTasks.map((t) => (
-							<>
-								Task: {t.name} (background: {String(t.isBackground)}
-								{t.type ? `, type: ${t.type}` : ''}
-								{t.command ? `, command: ${t.command}` : ''}
-								{t.script ? `, script: ${t.script}` : ''})<br />
-								{t.problemMatcher ? `Problem Matchers: ${t.problemMatcher}` : ''}<br />
-								{t.group ? `Group: ${t.group.isDefault ? 'isDefault ' + (t.group.kind ?? '') : (t.group.kind ?? '')} ` : ''}<br />
-								{t.dependsOn ? `Depends On: ${t.dependsOn}` : ''}<br />
-								<br />
-							</>
-						))}
-					</>
-				);
+		const renderTasks = () =>
+			runningTasks.length > 0 && (
+				<>
+					Active Tasks:<br />
+					{runningTasks.map((t) => (
+						<>
+							Task: {t.name} (background: {String(t.isBackground)}
+							{t.type ? `, type: ${t.type}` : ''}
+							{t.command ? `, command: ${t.command}` : ''}
+							{t.script ? `, script: ${t.script}` : ''})<br />
+							{t.problemMatcher ? `Problem Matchers: ${t.problemMatcher}` : ''}<br />
+							{t.group ? `Group: ${t.group.isDefault ? 'isDefault ' + (t.group.kind ?? '') : (t.group.kind ?? '')} ` : ''}<br />
+							{t.dependsOn ? `Depends On: ${t.dependsOn}` : ''}<br />
+							<br />
+						</>
+					))}
+				</>
+			);
 
-			const renderTerminals = () =>
-				terminals.length > 0 && (
-					<>
-						Active Terminals:<br />
-						{terminals.map((term) => (
-							<>
-								Terminal: {term.name}<br />
-								{term.lastCommand ? (
-									<>
-										Last Command: {term.lastCommand.commandLine ?? '(no last command)'}<br />
-										Cwd: {term.lastCommand.cwd ?? '(unknown)'}<br />
-										Exit Code: {term.lastCommand.exitCode ?? '(unknown)'}<br />
-									</>
-								) : ''}
-								Output: {'{'}Use {ToolName.GetTerminalOutput} for terminal with ID: {term.id}.{'}'}<br />
-							</>
-						))}
-					</>
-				);
+		const renderTerminals = () =>
+			terminals.length > 0 && (
+				<>
+					Active Terminals:<br />
+					{terminals.map((term) => (
+						<>
+							Terminal: {term.name}<br />
+							{term.lastCommand ? (
+								<>
+									Last Command: {term.lastCommand.commandLine ?? '(no last command)'}<br />
+									Cwd: {term.lastCommand.cwd ?? '(unknown)'}<br />
+									Exit Code: {term.lastCommand.exitCode ?? '(unknown)'}<br />
+								</>
+							) : ''}
+							Output: {'{'}Use {ToolName.GetTerminalOutput} for terminal with ID: {term.id}.{'}'}<br />
+						</>
+					))}
+				</>
+			);
 
 
-			const prevTaskCount = this._lastTaskCount;
-			const prevTerminalCount = this._lastTerminalCount;
-			const taskCount = tasks.length;
-			const terminalCount = terminals.length;
+		const prevTaskCount = this._lastTaskCount;
+		const prevTerminalCount = this._lastTerminalCount;
+		const taskCount = tasks.length;
+		const terminalCount = terminals?.length;
 
-			// Update for next turn
-			this._lastTaskCount = taskCount;
-			this._lastTerminalCount = terminalCount;
+		// Update for next turn
+		this._lastTaskCount = taskCount;
+		this._lastTerminalCount = terminalCount;
 
-			const taskCountDropped = prevTaskCount > 0 && taskCount === 0;
-			const terminalCountDropped = prevTerminalCount > 0 && terminalCount === 0;
-			if (taskCountDropped && terminalCountDropped) {
-				return 'No active tasks or terminals found.';
-			} else if (taskCountDropped && terminalCount > 0) {
-				return (
-					<>
-						No active tasks found.<br />
-						{renderTerminals()}
-					</>
-				);
-			} else if (terminalCountDropped && taskCount > 0) {
-				return (
-					<>
-						{renderTasks()}
-						No active terminals found.<br />
-					</>
-				);
-			}
+		const taskCountDropped = prevTaskCount > 0 && taskCount === 0;
+		const terminalCountDropped = prevTerminalCount > 0 && terminalCount === 0;
+		if (taskCountDropped && terminalCountDropped) {
+			return 'No active tasks or terminals found.';
+		} else if (taskCountDropped && terminalCount > 0) {
+			return (
+				<>
+					No active tasks found.<br />
+					{renderTerminals()}
+				</>
+			);
+		} else if (terminalCountDropped && taskCount > 0) {
+			return (
+				<>
+					{renderTasks()}
+					No active terminals found.<br />
+				</>
+			);
+		}
 
-			if (tasks.length > 0 && terminals.length > 0) {
-				return (
-					<>
-						{renderTasks()}
-						{renderTerminals()}
-					</>
-				);
-			} else if (tasks.length > 0) {
-				return (
-					<>
-						{renderTasks()}
-					</>
-				);
-			} else if (terminals.length > 0) {
-				return (
-					<>
-						{renderTerminals()}
-					</>
-				);
-			}
+		if (tasks.length > 0 && terminals.length > 0) {
+			return (
+				<>
+					{renderTasks()}
+					{renderTerminals()}
+				</>
+			);
+		} else if (tasks.length > 0) {
+			return (
+				<>
+					{renderTasks()}
+				</>
+			);
+		} else if (terminals.length > 0) {
+			return (
+				<>
+					{renderTerminals()}
+				</>
+			);
 		}
 	}
 }
